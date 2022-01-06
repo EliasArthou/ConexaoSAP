@@ -24,7 +24,7 @@ class RetornasessaoSAP:
     def definiraplicacao(self):
         # Abre o SAP ou pega a instância do SAP já aberta
         self.fechasap = not (aux.process_exists(self.nomeexecutavel))
-        if not self.fechasap:
+        if self.fechasap:
             win32api.ShellExecute(0, None, self.nomeexecutavel, None, '', 1)
             time.sleep(3)
 
@@ -35,7 +35,7 @@ class RetornasessaoSAP:
     def definirconexao(self):
         if self.application is None:
             # Chama a função que vai retornar a instância do SAP e a situação do mesmo (se estava aberto ou não)
-            self.definiraplicacao(self.nomeexecutavel)
+            self.definiraplicacao()
 
         if self.application is not None:
             # Lista todas as conexões instaladas no SAP
@@ -58,7 +58,7 @@ class RetornasessaoSAP:
                     # Verifica se a opção selecionada (ou que retornou da busca da conexão padrão) é uma opção válida
                     if str(resposta).isnumeric() and 1 <= resposta <= len(conexoes):
                         # Finalmente pega a conexão informada (ou pela conexão padrão ou pela lista de seleção)
-                        nomeconexao = conexoes(resposta)
+                        nomeconexao = conexoes[resposta]
                         # Verifica se já tem conexões ativas no SAP
                         if self.application.Connections.Count == 0 or self.fechasap:
                             # Caso a quantidade de conexões seja 0 ou o SAP estava fechado significa que é
@@ -83,7 +83,7 @@ class RetornasessaoSAP:
     def definirsessao(self):
         if self.application is None:
             # Chama a função que vai retornar a instância do SAP e a situação do mesmo (se estava aberto ou não)
-            self.definiraplicacao(self.nomeexecutavel)
+            self.definiraplicacao()
 
         if self.application is not None:
             # Verifica se tem conexão válida
@@ -93,7 +93,8 @@ class RetornasessaoSAP:
             if self.connection is not None:
                 # Verifica se o SAP não tenha nenhuma sessão ativa ou se a conexão foi criada no processo,
                 # isso faria automaticamente não ter sessões já abertas pra conexão que foi dada como entrada.
-                if self.connection.Sessions.Count == 0 or self.fechaconexao:
+                if self.connection.Sessions.Count == 0:
+                    print (self.connection.Sessions.Count)
                     self.connection.Sessions(0).createSession
                     self.session = self.connection.Sessions(0)
                     self.fechasessao = True
@@ -113,13 +114,3 @@ class RetornasessaoSAP:
                             messagebox.msgbox('Limite de Janelas atingido! Feche alguma janela para continuar!',
                                               messagebox.MB_OK, 'Limite de Janelas')
 
-    def login(self):
-        if self.session.info.transaction == 'S000':
-            self.login = aux.criarinputbox('Usuário', 'Digite o Login:')
-            self.senha = aux.criarinputbox('Senha', 'Digite o Senha:', '*')
-            if len(self.login) > 0:
-                self.session.findById("wnd[0]/usr/txtRSYST-BNAME").Text = self.login
-            if len(self.senha) > 0:
-                self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = self.senha
-
-            self.session.findById("wnd[0]").sendVKey(0)

@@ -102,7 +102,7 @@ def listaconexoes ():
     for service in myroot.iter('Service'):
         servidores.append(service.get('name'))
 
-    if len(servidores)>0:
+    if len(servidores) > 0:
         return servidores
     else:
         return None
