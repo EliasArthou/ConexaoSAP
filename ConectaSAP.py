@@ -94,7 +94,6 @@ class RetornasessaoSAP:
                 # Verifica se o SAP não tenha nenhuma sessão ativa ou se a conexão foi criada no processo,
                 # isso faria automaticamente não ter sessões já abertas pra conexão que foi dada como entrada.
                 if self.connection.Sessions.Count == 0:
-                    print (self.connection.Sessions.Count)
                     self.connection.Sessions(0).createSession
                     self.session = self.connection.Sessions(0)
                     self.fechasessao = True
