@@ -1,7 +1,3 @@
-
-
-
-
 def process_exists(process_name):
     import subprocess
     processes = subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
