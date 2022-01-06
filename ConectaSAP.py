@@ -130,6 +130,7 @@ class RetornasessaoSAP:
                             sessaotemp.createSession()
                             time.sleep(1)
                             self.session = self.connection.sessions(self.connection.Sessions.Count-1)
+                            self.fechasessao = True
                         else:
                             messagebox.msgbox('Limite de Janelas atingido! Feche alguma janela para continuar!',
                                               messagebox.MB_OK, 'Limite de Janelas')
