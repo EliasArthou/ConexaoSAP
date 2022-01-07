@@ -103,6 +103,7 @@ def listaconexoes ():
     else:
         return None
 
+
 def criarinputbox(titulo, mensagem, substituircaracter=''):
     import tkinter as tk
     from tkinter import simpledialog
@@ -111,7 +112,7 @@ def criarinputbox(titulo, mensagem, substituircaracter=''):
 
     ROOT.withdraw()
     # the input dialog
-    USER_INP = simpledialog.askstring(title=titulo, prompt=mensagem,show=substituircaracter)
+    USER_INP = simpledialog.askstring(title=titulo, prompt=mensagem, show=substituircaracter)
     if USER_INP is None:
         USER_INP = 0
 

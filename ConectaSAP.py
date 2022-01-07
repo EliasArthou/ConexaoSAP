@@ -9,7 +9,7 @@ import messagebox
 
 
 class RetornasessaoSAP:
-    def __init__(self, conexaopadrao):
+    def __init__(self, conexaopadrao, nomeexecutavel='saplogon.exe'):
         self.application = None
         self.connection = None
         self.session = None
@@ -18,7 +18,7 @@ class RetornasessaoSAP:
         self.fechasessao = True
         self.login = ''
         self.senha = ''
-        self.nomeexecutavel = 'saplogon.exe'
+        self.nomeexecutavel = nomeexecutavel#'saplogon.exe'
         self.conexaopadrao = conexaopadrao  # 'PRODUÇÃO ECC P03 - LOAD BALANCE'
         self.definirsessao()
 
@@ -117,9 +117,11 @@ class RetornasessaoSAP:
                     self.session = self.connection.Sessions(0)
                     self.fechasessao = True
                 else:
-                    for sessao in self.connection.sessions:
+                    for sessao in self.connection.Sessions:
                         # Verifica se a sessão está na tela de "login"
-                        if sessao.info.transaction == 'S000' or sessao.info.transaction == "SESSION_MANAGER":
+                        print(sessao.info.transaction)
+                        if sessao.info.transaction == 'S000' or sessao.info.transaction == "SMEN" \
+                                or sessao.info.transaction == "SESSION_MANAGER":
                             self.session = sessao
                             self.fechasessao = False
                             break

@@ -1,6 +1,6 @@
 import ConectaSAP
 
-SAP = ConectaSAP.RetornasessaoSAP('Teste')#PRODUÇÃO ECC P03 - LOAD BALANCE
+SAP = ConectaSAP.RetornasessaoSAP('Teste', 'saplogon.exe')
 
-
-SAP.session.endtransaction()
+if SAP.session is not None:
+    SAP.session.endtransaction()
