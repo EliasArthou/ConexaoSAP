@@ -1,3 +1,6 @@
+import pypyodbc
+import sensiveis as pwd
+
 def process_exists(process_name):
     import subprocess
     processes = subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
@@ -125,3 +128,23 @@ def pesquisalista(lista, item):
 
     except ValueError:
         return -1
+
+
+class Conec:
+    def __init__(self):
+        self.string = "DRIVER={SQL Server};SERVER=" + pwd.endbanco + ";UID=" + pwd.usrbanco + ";PWD="\
+                  + pwd.pwdbanco + ";DATABASE=" + pwd.nomebanco
+
+    def consulta(self, query, dictionary=False):
+        connection = pypyodbc.connect(self.string)
+        cursor = connection.cursor()
+        cursor.execute(query)
+        if not dictionary:
+            return cursor.fetchall()
+        else:
+            columns = [column[0] for column in cursor.description]
+            results = []
+            for row in cursor.fetchall():
+                results.append(dict(zip(columns, row)))
+
+            return results
