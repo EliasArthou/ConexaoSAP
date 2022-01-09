@@ -119,7 +119,6 @@ class RetornasessaoSAP:
                 else:
                     for sessao in self.connection.Sessions:
                         # Verifica se a sessão está na tela de "login"
-                        print(sessao.info.transaction)
                         if sessao.info.transaction == 'S000' or sessao.info.transaction == "SMEN" \
                                 or sessao.info.transaction == "SESSION_MANAGER":
                             self.session = sessao
