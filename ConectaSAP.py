@@ -18,7 +18,7 @@ class RetornasessaoSAP:
         self.fechasessao = True
         self.login = ''
         self.senha = ''
-        self.nomeexecutavel = nomeexecutavel#'saplogon.exe'
+        self.nomeexecutavel = nomeexecutavel # 'saplogon.exe'
         self.conexaopadrao = conexaopadrao  # 'PRODUÇÃO ECC P03 - LOAD BALANCE'
         self.definirsessao()
 

@@ -88,7 +88,7 @@ def caminhospadroes(caminho):
     return buf.value
 
 
-def listaconexoes ():
+def listaconexoes():
     import xml.etree.ElementTree as ET
 
     servidores = []
