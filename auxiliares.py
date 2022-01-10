@@ -140,11 +140,11 @@ class Conec:
         cursor = connection.cursor()
         cursor.execute(query)
         if not dictionary:
-            return cursor.fetchall()
+            results = cursor.fetchall()
         else:
             columns = [column[0] for column in cursor.description]
             results = []
             for row in cursor.fetchall():
                 results.append(dict(zip(columns, row)))
 
-            return results
+        return results
