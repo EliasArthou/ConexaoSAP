@@ -1,4 +1,6 @@
-
+"""
+Organizar os dados dos messagebox com todas as possíveis constantes que isso envolve.
+"""
 from __future__ import print_function
 import ctypes
 

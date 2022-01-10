@@ -1,4 +1,6 @@
-
+"""
+Funções complementares de ações gerais para auxiliar o funcionamento do processo.
+"""
 import pypyodbc
 import sensiveis as pwd
 

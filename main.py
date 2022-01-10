@@ -1,4 +1,7 @@
-
+"""
+Ações para serem executadas no SAP, pode ter funções externas para pegar uma lista de Entradas a serem realizadas,
+por exemplo.
+"""
 import ConectaSAP
 import auxiliares as aux
 
