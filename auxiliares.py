@@ -1,9 +1,11 @@
 import pypyodbc
 import sensiveis as pwd
 
+
 def process_exists(process_name):
     import subprocess
-    processes = subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
+    processes = \
+    subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
     if process_name in str(processes):
         return True
     else:
@@ -13,7 +15,7 @@ def process_exists(process_name):
 def fecharprograma(nome):
     import os
 
-    os.system("taskkill /im "+nome)
+    os.system("taskkill /im " + nome)
 
 
 def caminhospadroes(caminho):
@@ -95,7 +97,7 @@ def listaconexoes():
     import xml.etree.ElementTree as ET
 
     servidores = []
-    caminho = caminhospadroes(26)+'\\SAP\\Common\\SAPUILandscape.xml'
+    caminho = caminhospadroes(26) + '\\SAP\\Common\\SAPUILandscape.xml'
     mytree = ET.parse(caminho)
     myroot = mytree.getroot()
     for service in myroot.iter('Service'):
@@ -111,15 +113,15 @@ def criarinputbox(titulo, mensagem, substituircaracter=''):
     import tkinter as tk
     from tkinter import simpledialog
 
-    ROOT = tk.Tk()
+    root = tk.Tk()
 
-    ROOT.withdraw()
+    root.withdraw()
     # the input dialog
-    USER_INP = simpledialog.askstring(title=titulo, prompt=mensagem, show=substituircaracter)
-    if USER_INP is None:
-        USER_INP = 0
+    user_inp = simpledialog.askstring(title=titulo, prompt=mensagem, show=substituircaracter)
+    if user_inp is None:
+        user_inp = 0
 
-    return USER_INP
+    return user_inp
 
 
 def pesquisalista(lista, item):
@@ -132,8 +134,8 @@ def pesquisalista(lista, item):
 
 class Conec:
     def __init__(self):
-        self.string = "DRIVER={SQL Server};SERVER=" + pwd.endbanco + ";UID=" + pwd.usrbanco + ";PWD="\
-                  + pwd.pwdbanco + ";DATABASE=" + pwd.nomebanco
+        self.string = "DRIVER={SQL Server};SERVER=" + pwd.endbanco + ";UID=" + pwd.usrbanco + ";PWD=" \
+                      + pwd.pwdbanco + ";DATABASE=" + pwd.nomebanco
 
     def consulta(self, query, dictionary=False):
         connection = pypyodbc.connect(self.string)
