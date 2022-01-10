@@ -139,6 +139,7 @@ class RetornasessaoSAP:
                 # isso faria automaticamente não ter sessões já abertas para conexão dada como entrada.
                 if self.connection.Sessions.Count == 0:
                     self.connection.sessions(0).createSession()
+                    time.sleep(1)
                     self.session = self.connection.Sessions(0)
                     self.fechasessao = True
                 else:
@@ -152,10 +153,10 @@ class RetornasessaoSAP:
 
                     if self.session is None:
                         if self.connection.Sessions.Count < 4:
-                            sessaotemp = self.connection.sessions(self.connection.Sessions.Count-1)
+                            sessaotemp = self.connection.sessions(self.connection.Sessions.Count - 1)
                             sessaotemp.createSession()
                             time.sleep(1)
-                            self.session = self.connection.sessions(self.connection.Sessions.Count-1)
+                            self.session = self.connection.sessions(self.connection.Sessions.Count - 1)
                             self.fechasessao = True
                         else:
                             messagebox.msgbox('Limite de Janelas atingido! Feche alguma janela para continuar!',
@@ -178,7 +179,14 @@ class RetornasessaoSAP:
         """
         if self.fechasap:
             aux.fecharprograma('saplogon.exe')
+
         elif self.fechaconexao:
-            self.session.findById("wnd[0]").close()
+            while self.session.ActiveWindow.name != 'wnd[0]' and self.session is not None:
+                self.session.findById(self.session.ActiveWindow.name).close()
+                time.sleep(1)
+
         elif self.session:
-            self.session.findById("wnd[0]").close()
+            while self.session.ActiveWindow.name != 'wnd[0]' and self.session is not None:
+                self.session.findById(self.session.ActiveWindow.name).close()
+                time.sleep(1)
+
