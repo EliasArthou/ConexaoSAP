@@ -9,6 +9,9 @@ import messagebox
 
 
 class RetornasessaoSAP:
+    """
+    Criar objeto de conexão com o SAP
+    """
     def __init__(self, conexaopadrao, nomeexecutavel='saplogon.exe'):
         self.application = None
         self.connection = None
@@ -23,7 +26,9 @@ class RetornasessaoSAP:
         self.definirsessao()
 
     def definiraplicacao(self):
-        # Abre o SAP ou pega a instância do SAP já aberta
+        """
+         Abre o SAP ou pega a instância do SAP já aberta
+        """
         self.fechasap = not (aux.process_exists(self.nomeexecutavel))
         if self.fechasap:
             win32api.ShellExecute(0, None, self.nomeexecutavel, None, '', 1)
@@ -35,6 +40,9 @@ class RetornasessaoSAP:
             self.application = sapguiauto.GetScriptingEngine
 
     def definirconexao(self):
+        """
+        Define a conexão do SAP que será utilizada para executar a ação desejada
+        """
         if self.application is None:
             # Chama a função que vai retornar a instância do SAP e a situação do mesmo (se estava aberto ou não)
             self.definiraplicacao()
@@ -100,6 +108,9 @@ class RetornasessaoSAP:
                                 self.fechaconexao = True
 
     def definirsessao(self):
+        """
+        Define a sessão na conexão informada, caso já exista utiliza a mesma, caso não cria a sessão.
+        """
         if self.application is None:
             # Chama a função que vai retornar a instância do SAP e a situação do mesmo (se estava aberto ou não)
             self.definiraplicacao()
@@ -146,3 +157,14 @@ class RetornasessaoSAP:
                                 self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = self.senha
                             self.session.findById("wnd[0]").sendVKey(0)
 
+    def finalizarsap(self):
+        """
+        Encerra o SAP conforme iniciou o processo, se iniciou fechado, fecha o SAP. Se tinha a conexão aberta,
+        a mantém, etc.
+        """
+        if self.fechasap:
+            aux.fecharprograma('saplogon.exe')
+        elif self.fechaconexao:
+            self.session.findById("wnd[0]").close()
+        elif self.session:
+            self.session.findById("wnd[0]").close()

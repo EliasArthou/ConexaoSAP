@@ -44,4 +44,10 @@ IDYES = 6
 
 
 def msgbox(text, style, title):
+    """
+    :param text: mensagem que aparecerá na caixa de mensagem.
+    :param style: quais opções e símbolos aparecerão na caixa de mensagem.
+    :param title: cabeçalho da janela da caixa de mensagem.
+    :return: a janela com os parâmetros/opções informados.
+    """
     return ctypes.windll.user32.MessageBoxW(None, text, title, style)

@@ -3,9 +3,15 @@ import sensiveis as pwd
 
 
 def process_exists(process_name):
+    """
+
+    :param process_name: nome do processo a ser verificado na lista de processos do Windows.
+    :return: retorna a resposta se o programa está aberto (True) ou não (False).
+    """
     import subprocess
     processes = \
-    subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE, stdout=subprocess.PIPE).communicate()[0]
+        subprocess.Popen('tasklist', stdin=subprocess.PIPE, stderr=subprocess.PIPE,
+                         stdout=subprocess.PIPE).communicate()[0]
     if process_name in str(processes):
         return True
     else:
@@ -13,12 +19,21 @@ def process_exists(process_name):
 
 
 def fecharprograma(nome):
+    """
+
+    :param nome: nome do executável a ser finalizado.
+    """
     import os
 
     os.system("taskkill /im " + nome)
 
 
 def caminhospadroes(caminho):
+    """
+
+    :param caminho: opção do caminho padrão que gostaria de retornar (em caso de dúvida ver lista abaixo).
+    :return: o caminho de acordo com a opção dada como entrada.
+    """
     import ctypes.wintypes
     # CSIDL	                        Decimal	Hex	    Shell	Description
     # CSIDL_ADMINTOOLS	            48	    0x30	5.0	    The file system directory that is used to store administrative tools for an individual user.
@@ -94,6 +109,10 @@ def caminhospadroes(caminho):
 
 
 def listaconexoes():
+    """
+
+    :return: vai no arquivo xml padrão do SAP GUI para pegar todas as conexões instaladas no mesmo.
+    """
     import xml.etree.ElementTree as ET
 
     servidores = []
@@ -110,6 +129,13 @@ def listaconexoes():
 
 
 def criarinputbox(titulo, mensagem, substituircaracter=''):
+    """
+
+    :param titulo: cabeçalho da caixa de recebimento de dados do usuário (inputbox).
+    :param mensagem: mensagem (normalmente descritiva ao 'input') para orientar o usuário.
+    :param substituircaracter: caso seja um campo de senha informar o parâmetro para que a digitação não fique visível.
+    :return: janela com as opções escolhidas.
+    """
     import tkinter as tk
     from tkinter import simpledialog
 
@@ -125,6 +151,11 @@ def criarinputbox(titulo, mensagem, substituircaracter=''):
 
 
 def pesquisalista(lista, item):
+    """
+    :param lista: lista a ser realizado a busca.
+    :param item: item a ser encontrado.
+    :return: retorna o índice do item procurado ou -1 caso não ache.
+    """
     try:
         return lista.index(item)
 
@@ -133,11 +164,20 @@ def pesquisalista(lista, item):
 
 
 class Conec:
+    """
+    Objeto de conexão com o banco de dados.
+    """
     def __init__(self):
         self.string = "DRIVER={SQL Server};SERVER=" + pwd.endbanco + ";UID=" + pwd.usrbanco + ";PWD=" \
                       + pwd.pwdbanco + ";DATABASE=" + pwd.nomebanco
 
     def consulta(self, query, dictionary=False):
+        """
+
+        :param query: consulta a ser executada no banco (SELECT).
+        :param dictionary: se vai retornar em forma de dicionário ou lista. O padrão é lista.
+        :return: a lista ou dicionario com o resultado da consulta.
+        """
         connection = pypyodbc.connect(self.string)
         cursor = connection.cursor()
         cursor.execute(query)
