@@ -5,10 +5,16 @@ por exemplo.
 
 import ConectaSAP
 import auxiliares as aux
+import sys
+import messagebox
 # from IPython.display import display
 
-
-intervalo = 10000
+intervalo = aux.criarinputbox('Quantidade de Itens', 'Insira a quantidade de itens por job a ser extraído:')
+if intervalo.isnumeric():
+    intervalo = int(intervalo)
+else:
+    messagebox.msgbox('Valor inválido para a quantidade de itens!', messagebox.MB_OK, 'Erro quantidade de itens')
+    sys.exit()
 
 # Chamar o SAP com uma conexão padrão
 SAP = ConectaSAP.RetornasessaoSAP('Teste')
@@ -17,11 +23,11 @@ SAP = ConectaSAP.RetornasessaoSAP('Teste')
 se = SAP.session
 
 # Seleciona a transação desejada
-se.findById("wnd[0]/tbar[0]/okcd").text = "sqvi"
+se.findById("wnd[0]/tbar[0]/okcd").text = "SQVI"
 # Confirma a transação
 se.findById("wnd[0]").sendVKey(0)
 # Seleciona a View
-se.findById("wnd[0]/usr/ctxtRS38R-QNUM").text = "eban"
+se.findById("wnd[0]/usr/ctxtRS38R-QNUM").text = "Eban"
 # Confirma a seleção
 se.findById("wnd[0]/usr/btnP1").press()
 
