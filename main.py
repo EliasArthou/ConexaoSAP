@@ -37,7 +37,7 @@ sublistas = list(aux.chunks(lista, intervalo))
 for indice, item in enumerate(sublistas):
     # Carrega os n itens (definido na variável intervalo) para a memória para ser "colado" depois
     aux.list_to_clipboard(item, indice+1)
-    # Para abrir a lista de colagem a caixa de texto não pode estar vazia
+    # Para abrir a lista de colagem a caixa de texto não pode estar vazia (problema dessa transação específica)
     se.findById("wnd[0]/usr/ctxtBANFN-LOW").text = "0"
     # Abre a lista de colagem de itens da memória
     se.findById("wnd[0]/usr/btn%_BANFN_%_APP_%-VALU_PUSH").press()

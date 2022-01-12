@@ -183,7 +183,11 @@ class RetornasessaoSAP:
         elif self.fechaconexao:
             while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
                 self.session.findById(self.session.ActiveWindow.name).close()
+                if self.session.ActiveWindow.name == 'wnd[1]':
+                    self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
 
         elif self.session:
             while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
                 self.session.findById(self.session.ActiveWindow.name).close()
+                if self.session.ActiveWindow.name == 'wnd[1]':
+                    self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
