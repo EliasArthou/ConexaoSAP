@@ -25,8 +25,10 @@ se.findById("wnd[0]/usr/ctxtRS38R-QNUM").text = "eban"
 # Confirma a seleção
 se.findById("wnd[0]/usr/btnP1").press()
 
-#
+# Conexão com o Banco de Dados
 conec = aux.Conec()
+
+# Consulta a ser realizada no banco (será usado para fazer a seleção no SAP)
 lista = conec.consulta("SELECT DISTINCT [Nº doc.ref] FROM [BDSIRI].[UsrBDSIRI].[GIG Analise Compromisso]"
                        " WHERE UPPER ([Ctg.val])='PEDIDOS' ORDER BY [Nº doc.ref] DESC")
 
@@ -62,6 +64,6 @@ for indice, item in enumerate(sublistas):
 # Sai da transação
 se.EndTransaction()
 
-
+# Trata a finalização do SAP
 if SAP.session is not None:
     SAP.finalizarsap()
