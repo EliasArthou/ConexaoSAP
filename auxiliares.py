@@ -35,7 +35,7 @@ def caminhospadroes(caminho):
     """
 
     :param caminho: opção do caminho padrão que gostaria de retornar (em caso de dúvida ver lista abaixo).
-    :return: o caminho de acordo com a opção dada como entrada.
+    :return: o caminho segundo a opção dada como entrada.
     """
     import ctypes.wintypes
     # CSIDL	                        Decimal	Hex	    Shell	Description
@@ -114,7 +114,7 @@ def caminhospadroes(caminho):
 def listaconexoes():
     """
 
-    :return: vai no arquivo xml padrão do SAP GUI para pegar todas as conexões instaladas no mesmo.
+    :return: vai ao arquivo xml padrão do SAP GUI para pegar todas as conexões instaladas no mesmo.
     """
     import xml.etree.ElementTree as ET
 
@@ -170,6 +170,8 @@ class Conec:
     """
     Objeto de conexão com o banco de dados.
     """
+    string: ''
+
     def __init__(self):
         self.string = "DRIVER={SQL Server};SERVER=" + pwd.endbanco + ";UID=" + pwd.usrbanco + ";PWD=" \
                       + pwd.pwdbanco + ";DATABASE=" + pwd.nomebanco
@@ -181,11 +183,16 @@ class Conec:
         :param dictionary: se vai retornar em forma de dicionário ou lista. O padrão é lista.
         :return: a lista ou dicionario com o resultado da consulta.
         """
+
         connection = pypyodbc.connect(self.string)
         cursor = connection.cursor()
         cursor.execute(query)
         if not dictionary:
-            results = cursor.fetchall()
+            teste = cursor.fetchall()
+            if len(teste[0]) != 1:
+                results = teste.encode('ascii', 'ignore')
+            else:
+                results = [item[0] for item in teste]
         else:
             columns = [column[0] for column in cursor.description]
             results = []
@@ -193,3 +200,44 @@ class Conec:
                 results.append(dict(zip(columns, row)))
 
         return results
+
+
+def chunks(lista, n):
+    """
+    :param lista: lista a ser "quebrada".
+    :param n: quantidade de itens por sublista
+    """
+    for i in range(0, len(lista), n):
+        yield lista[i:i + n]
+
+
+def list_to_clipboard(output_list, item=0):
+    """
+    Check if len(list) > 0, then copy to clipboard in dataframe format (text has problem to paste in SAP)
+
+    :param output_list: lista que vai pra memória
+    :param item: sublista copiada (controle meu)
+    """
+
+    import pandas as pd
+    from ctypes import windll
+
+    if item == 0:
+        itemcopiado = ''
+    else:
+        itemcopiado = str(item)
+
+    # Limpar o clipboard
+    if windll.user32.OpenClipboard(None):
+        windll.user32.EmptyClipboard()
+        windll.user32.CloseClipboard()
+
+    # Pegar o pedaço recebido da lista, transformar em dataframe e "jogar" para o ‘clipboard’ do Windows
+    if len(output_list) > 0:
+        df = pd.DataFrame(output_list, columns=[''])
+
+        df.to_clipboard(True, '\r', index=False)
+
+        print('Lista Copiada ' + str(itemcopiado))
+    else:
+        print('Sem itens na lista para copiar ' + str(itemcopiado))

@@ -181,12 +181,9 @@ class RetornasessaoSAP:
             aux.fecharprograma('saplogon.exe')
 
         elif self.fechaconexao:
-            while self.session.ActiveWindow.name != 'wnd[0]' and self.session is not None:
+            while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
                 self.session.findById(self.session.ActiveWindow.name).close()
-                time.sleep(1)
 
         elif self.session:
-            while self.session.ActiveWindow.name != 'wnd[0]' and self.session is not None:
+            while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
                 self.session.findById(self.session.ActiveWindow.name).close()
-                time.sleep(1)
-
