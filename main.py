@@ -32,6 +32,7 @@ conec = aux.Conec()
 lista = conec.consulta("SELECT DISTINCT [Nº doc.ref] FROM [BDSIRI].[UsrBDSIRI].[GIG Analise Compromisso]"
                        " WHERE UPPER ([Ctg.val])='PEDIDOS' ORDER BY [Nº doc.ref] DESC")
 
+# Quebra a lista em lista menores para o tamanho com a quantidade de item definido na variável intervalo
 sublistas = list(aux.chunks(lista, intervalo))
 # 'Looping' para quebrar o pedido em vários 'jobs'
 for indice, item in enumerate(sublistas):
