@@ -29,16 +29,27 @@ def programarSQVI(transacoes, se, visual):
     intervalo = aux.criarinputbox('Quantidade de Itens', 'Insira a quantidade de itens por job a ser extraído:',
                                   valorinicial='10000')
     # Verifica se foi digitado corretamente
-    if intervalo.isnumeric():
-        # Formata a entrada para número
-        intervalo = int(intervalo)
+    if len(intervalo) > 0:
+        if intervalo.isnumeric():
+            # Formata a entrada para número
+            intervalo = int(intervalo)
     else:
         # Mensagem de erro e finalização do processo se o intervalo foi digitado errado
         messagebox.msgbox('Valor inválido para a quantidade de itens!', messagebox.MB_OK, 'Erro quantidade de itens')
         sys.exit()
 
+    visual.acertaconfjanela(True)
+
     # ‘Looping’ para executar todas as visões solicitadas pelo usuário
-    for transacao in transacoes:
+    for index, transacao in enumerate(transacoes):
+        # ==================== Parte Gráfica =======================================================
+        # Coloca o nome do JOB na tela (da View do JOB, na verdade, visto que a transação é a SQVI)
+        visual.mudartexto('labeljob', transacao[list(transacao)[0]])
+        # Diz qual o número da transação (View) está sendo executada no momento no total de transações (Views)
+        visual.mudartexto('statustrans', 'Item ' + str(index + 1) + ' de ' + str(len(transacoes)) + '...')
+        # Atualiza a barra de progresso das transações (Views)
+        visual.configurarbarra('barratrans', len(transacoes), index)
+        # ==================== Parte Gráfica =======================================================
         # Seleciona a transação desejada
         se.findById("wnd[0]/tbar[0]/okcd").text = "SQVI"
         # Confirma a transação
@@ -56,6 +67,7 @@ def programarSQVI(transacoes, se, visual):
             # índice da lista, ressaltando que numa lista o primeiro índice é de valor 0)
             tipoatual = transacao[list(transacao)[1]]
             # Consulta a ser realizada no banco (será usado para fazer a seleção no SAP)
+            visual.mudartexto('labelpassos', 'Executando Consulta no Banco...')
             lista = conec.consulta("SELECT DISTINCT [Nº doc.ref] FROM [BDSIRI].[UsrBDSIRI].[GIG Analise Compromisso]"
                                    " WHERE UPPER ([Ctg.val])='" + tipoatual + "' ORDER BY [Nº doc.ref]")
 
@@ -65,18 +77,15 @@ def programarSQVI(transacoes, se, visual):
         else:
             # Quebra a lista em lista menores para o tamanho com a quantidade de item definido na variável intervalo
             sublistas = list(aux.chunks(lista, intervalo))
-            # indice = 0
-            # app = App(transacao[list(transacao)[0]], indice, len(sublistas))
-            # app.mainloop()
             indice = 0
             visual.mudartexto('labeljob', transacao[list(transacao)[0]])
-            visual.configurarbarra(len(sublistas), indice)
+            visual.configurarbarra('barrajob', len(sublistas), indice)
 
-            # 'Looping' para quebrar o pedido em vários 'jobs'
+            # 'Looping' para quebrar o 'job' (view) em vários 'jobs'
             for indice, item in enumerate(sublistas):
                 visual.mudartexto('labelpassos', 'Item ' + str(indice + 1) + ' de ' + str(len(sublistas)) + '...')
-                # Atualiza a barra de progresso
-                visual.configurarbarra(len(sublistas), indice)
+                # Atualiza a barra de progresso dos 'jobs' programados
+                visual.configurarbarra('barrajob', len(sublistas), indice)
                 # Grava a data e hora que começou a rodar os 'JOBs'
                 datainicio = datetime.datetime.now()
                 # Carrega os n itens (definido na variável intervalo) para a memória para ser "colado" depois
@@ -120,7 +129,7 @@ def programarSQVI(transacoes, se, visual):
             if not os.path.isfile('JobLog.xlsx'):
                 # Cria o arquivo em memória
                 wb = Workbook()
-                #Salva o arquivo
+                # Salva o arquivo
                 wb.save('JobLog.xlsx')
             # Verifica se o arquivo de LOG existe para não ter erro quando abrir o arquivo para salvar o LOG
             if os.path.isfile('JobLog.xlsx'):

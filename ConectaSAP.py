@@ -94,6 +94,8 @@ class RetornasessaoSAP:
                             resposta = aux.criarinputbox('Escolha de Conexão', mensagem, valorinicial='11')
                             if str(resposta).isnumeric():
                                 resposta = int(resposta) - 1
+                            else:
+                                messagebox.msgbox('Opção inválida!', messagebox.MB_OK, 'Conexão Inválida')
 
                         # Verifica se a opção selecionada (ou que retornou da busca da conexão padrão)
                         # é uma opção válida

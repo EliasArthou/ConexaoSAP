@@ -5,7 +5,7 @@ por exemplo.
 
 import ConectaSAP
 from operator import itemgetter
-import SAP
+from SAP import programarSQVI
 from janela import App
 
 
@@ -13,18 +13,18 @@ from janela import App
 transacoes = [{'View': 'EKKN_COMP', 'Tipo': 'PEDIDOS'},
               {'View': 'EKET', 'Tipo': 'PEDIDOS'},
               {'View': 'EBAN', 'Tipo': 'REQUISIÇÕES DE COMPRA'}]
-# Ordena a lista por Tipo para não ficar realziando SELECTs denecessários, pois deixa todos os tipos iguais "juntos"
+# Ordena a lista por Tipo para não ficar realizando SELECTs denecessários, pois deixa todos os tipos iguais "juntos"
 transacoes = sorted(transacoes, key=itemgetter('Tipo'))
 
 # Chamar o SAP com uma conexão padrão
 ERP = ConectaSAP.RetornasessaoSAP('Teste')
 
 app = App()
-SAP.programarSQVI(transacoes, ERP.session, app)
+programarSQVI(transacoes, ERP.session, app)
 # Trata a finalização do SAP
 if ERP.session is not None:
     ERP.finalizarsap()
-app.mainloop()
+
 
 
 

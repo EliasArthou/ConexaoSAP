@@ -143,8 +143,9 @@ def criarinputbox(titulo, mensagem, substituircaracter='', valorinicial=''):
     from tkinter import simpledialog
 
     root = tk.Tk()
-
+    root.attributes("-topmost", True)
     root.withdraw()
+
     # the input dialog
     user_inp = simpledialog.askstring(title=titulo, prompt=mensagem, initialvalue=valorinicial, show=substituircaracter)
     if user_inp is None:
