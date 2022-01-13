@@ -91,7 +91,7 @@ class RetornasessaoSAP:
                             for indice, conexao in enumerate(conexoes):
                                 mensagem = mensagem + str(indice + 1) + ' - ' + conexao + chr(13)
                             mensagem = mensagem + chr(13) * 2 + 'Escolha a conexão desejada:'
-                            resposta = aux.criarinputbox('Escolha de Conexão', mensagem)
+                            resposta = aux.criarinputbox('Escolha de Conexão', mensagem, valorinicial='11')
                             if str(resposta).isnumeric():
                                 resposta = int(resposta) - 1
 
@@ -152,24 +152,40 @@ class RetornasessaoSAP:
                             break
 
                     if self.session is None:
+                        # Testa se o limite de telas do SAP foi alcançado
                         if self.connection.Sessions.Count < 4:
+                            # Cria a sessão temporária para permitir criar uma nova sessão
+                            # (não executa corretamente se não tiver dentro de um objeto)
                             sessaotemp = self.connection.sessions(self.connection.Sessions.Count - 1)
+                            # Cria uma nova sessão
                             sessaotemp.createSession()
+                            # Espera a sessão ser carregada
                             time.sleep(1)
+                            # Pega a sessão que acabou de criar
                             self.session = self.connection.sessions(self.connection.Sessions.Count - 1)
+                            # Inicia a variável para informar que a sessão tem que ser finalizada depois do
+                            # processo executado.
                             self.fechasessao = True
                         else:
+                            # Mensagem de erro caso não tenha
                             messagebox.msgbox('Limite de Janelas atingido! Feche alguma janela para continuar!',
                                               messagebox.MB_OK, 'Limite de Janelas')
-
                     else:
+                        # Testa se está na tela de Login do SAP
                         if self.session.info.transaction == 'S000':
+                            # Pede o usuário
                             self.login = aux.criarinputbox('Usuário', 'Digite o Login:')
+                            # Pede a senha
                             self.senha = aux.criarinputbox('Senha', 'Digite o Senha:', '*')
+                            # Testa se o usuário foi digitado
                             if len(self.login) > 0:
+                                # Preenche o usuário
                                 self.session.findById("wnd[0]/usr/txtRSYST-BNAME").Text = self.login
+                            # Testa se a senha foi digitada
                             if len(self.senha) > 0:
+                                # Preenche a senha
                                 self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = self.senha
+                            # Apera o botão de iniciar o Login
                             self.session.findById("wnd[0]").sendVKey(0)
 
     def finalizarsap(self):

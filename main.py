@@ -6,6 +6,7 @@ por exemplo.
 import ConectaSAP
 from operator import itemgetter
 import SAP
+from janela import App
 
 
 # Lista com as Views que deseja programar no SAP na transação SQVI e com a chave SQL equivalente
@@ -18,15 +19,15 @@ transacoes = sorted(transacoes, key=itemgetter('Tipo'))
 # Chamar o SAP com uma conexão padrão
 ERP = ConectaSAP.RetornasessaoSAP('Teste')
 
-# A sessão é carregada numa variável para facilitar para escrever o código,
-# visto que o objeto será digitado várias vezes.
-se = ERP.session
-
-SAP.programarSQVI(transacoes, se)
-
+app = App()
+SAP.programarSQVI(transacoes, ERP.session, app)
 # Trata a finalização do SAP
-if se is not None:
+if ERP.session is not None:
     ERP.finalizarsap()
+app.mainloop()
+
+
+
 
 
 

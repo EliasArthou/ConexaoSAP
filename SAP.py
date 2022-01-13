@@ -7,11 +7,14 @@ import datetime
 from openpyxl import Workbook, load_workbook
 import os
 import auxiliares as aux
-from janela import App
 
 
-def programarSQVI(transacoes, se):
+# from janela import App
+
+
+def programarSQVI(transacoes, se, visual):
     """
+    :param visual: tela de retorno do usuário.
     :param transacoes: lista contendo o dicionário com a transação e a classificação dos itens pesquisados.
     :param se: sessão do SAP que as ações do SAP será executado
     """
@@ -49,21 +52,31 @@ def programarSQVI(transacoes, se):
         conec = aux.Conec()
 
         if transacao[list(transacao)[1]] != tipoatual:
+            # Pega o campo tipo pelo index dele (transforma os índices do dicionário numa lista e depois pega o segundo
+            # índice da lista, ressaltando que numa lista o primeiro índice é de valor 0)
             tipoatual = transacao[list(transacao)[1]]
             # Consulta a ser realizada no banco (será usado para fazer a seleção no SAP)
             lista = conec.consulta("SELECT DISTINCT [Nº doc.ref] FROM [BDSIRI].[UsrBDSIRI].[GIG Analise Compromisso]"
                                    " WHERE UPPER ([Ctg.val])='" + tipoatual + "' ORDER BY [Nº doc.ref]")
 
+        # Verifica se a lista veio com itens
         if len(lista) == 0:
             messagebox.msgbox('Sem item para analisar com o tipo informado!', messagebox.MB_OK, 'Tabela Vazia')
         else:
             # Quebra a lista em lista menores para o tamanho com a quantidade de item definido na variável intervalo
             sublistas = list(aux.chunks(lista, intervalo))
-            indice = 0
+            # indice = 0
             # app = App(transacao[list(transacao)[0]], indice, len(sublistas))
             # app.mainloop()
+            indice = 0
+            visual.mudartexto('labeljob', transacao[list(transacao)[0]])
+            visual.configurarbarra(len(sublistas), indice)
+
             # 'Looping' para quebrar o pedido em vários 'jobs'
             for indice, item in enumerate(sublistas):
+                visual.mudartexto('labelpassos', 'Item ' + str(indice + 1) + ' de ' + str(len(sublistas)) + '...')
+                # Atualiza a barra de progresso
+                visual.configurarbarra(len(sublistas), indice)
                 # Grava a data e hora que começou a rodar os 'JOBs'
                 datainicio = datetime.datetime.now()
                 # Carrega os n itens (definido na variável intervalo) para a memória para ser "colado" depois
@@ -105,17 +118,19 @@ def programarSQVI(transacoes, se):
             datafim = datetime.datetime.now()
             # Verifica se o arquivo de LOG existe
             if not os.path.isfile('JobLog.xlsx'):
+                # Cria o arquivo em memória
                 wb = Workbook()
+                #Salva o arquivo
                 wb.save('JobLog.xlsx')
-
+            # Verifica se o arquivo de LOG existe para não ter erro quando abrir o arquivo para salvar o LOG
             if os.path.isfile('JobLog.xlsx'):
+                # Carrega o arquivo na memória
                 wb = load_workbook('JobLog.xlsx')
-
+                # Pega a planilha aberta
                 ws = wb.active
 
-                print([datainicio.strftime("%d/%m/%Y"), datainicio.strftime("%X"), datafim.strftime("%d/%m/%Y"),
-                       datafim.strftime("%X"), se.info.user, transacao[list(transacao)[0]]])
+                # Salva as informações relevantes para resgastar os jobs no próximo passo
                 ws.append([datainicio.strftime("%d/%m/%Y"), datainicio.strftime("%X"), datafim.strftime("%d/%m/%Y"),
                            datafim.strftime("%X"), se.info.user, transacao[list(transacao)[0]]])
-
+                # Salva o arquivo com as alterações
                 wb.save('JobLog.xlsx')

@@ -133,7 +133,7 @@ def listaconexoes():
 
 def criarinputbox(titulo, mensagem, substituircaracter='', valorinicial=''):
     """
-
+    :param valorinicial: valor pré-preenchido na caixa de texto.
     :param titulo: cabeçalho da caixa de recebimento de dados do usuário (inputbox).
     :param mensagem: mensagem (normalmente descritiva ao 'input') para orientar o usuário.
     :param substituircaracter: caso seja um campo de senha informar o parâmetro para que a digitação não fique visível.
@@ -178,7 +178,6 @@ class Conec:
 
     def consulta(self, query, dictionary=False):
         """
-
         :param query: consulta a ser executada no banco (SELECT).
         :param dictionary: se vai retornar em forma de dicionário ou lista. O padrão é lista.
         :return: a lista ou dicionario com o resultado da consulta.
