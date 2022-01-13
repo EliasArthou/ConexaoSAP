@@ -148,10 +148,8 @@ def programarSQVI(transacoes, se, visual):
                     # Salva o arquivo com as alterações
                     wb.save('JobLog.xlsx')
 
-
     except Exception as e:
         messagebox.msgbox(str(e))
-
 
     finally:
         # Trata a finalização do SAP
