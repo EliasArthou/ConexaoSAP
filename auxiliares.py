@@ -131,7 +131,7 @@ def listaconexoes():
         return None
 
 
-def criarinputbox(titulo, mensagem, substituircaracter=''):
+def criarinputbox(titulo, mensagem, substituircaracter='', valorinicial=''):
     """
 
     :param titulo: cabeçalho da caixa de recebimento de dados do usuário (inputbox).
@@ -146,7 +146,7 @@ def criarinputbox(titulo, mensagem, substituircaracter=''):
 
     root.withdraw()
     # the input dialog
-    user_inp = simpledialog.askstring(title=titulo, prompt=mensagem, show=substituircaracter)
+    user_inp = simpledialog.askstring(title=titulo, prompt=mensagem, initialvalue=valorinicial, show=substituircaracter)
     if user_inp is None:
         user_inp = 0
 
@@ -207,8 +207,9 @@ def chunks(lista, n):
     :param lista: lista a ser "quebrada".
     :param n: quantidade de itens por sublista
     """
-    for i in range(0, len(lista), n):
-        yield lista[i:i + n]
+    if len(lista) > 0:
+        for i in range(0, len(lista), n):
+            yield lista[i:i + n]
 
 
 def list_to_clipboard(output_list, item=0):
