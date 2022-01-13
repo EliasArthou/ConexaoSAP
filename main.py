@@ -21,13 +21,3 @@ ERP = ConectaSAP.RetornasessaoSAP('Teste')
 
 app = App()
 programarSQVI(transacoes, ERP.session, app)
-
-
-
-
-
-
-
-
-
-
