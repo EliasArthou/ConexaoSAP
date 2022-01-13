@@ -239,6 +239,5 @@ def list_to_clipboard(output_list, item=0):
 
         df.to_clipboard(True, '\r', index=False)
 
-        print('Lista Copiada ' + str(itemcopiado))
     else:
         print('Sem itens na lista para copiar ' + str(itemcopiado))
