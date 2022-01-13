@@ -21,9 +21,7 @@ ERP = ConectaSAP.RetornasessaoSAP('Teste')
 
 app = App()
 programarSQVI(transacoes, ERP.session, app)
-# Trata a finalização do SAP
-if ERP.session is not None:
-    ERP.finalizarsap()
+
 
 
 
