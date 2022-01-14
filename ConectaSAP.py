@@ -1,6 +1,7 @@
 """
 Organizar o objeto de conexão com o SAP e tudo que ele precisa para funcionar corretamente.
 """
+import sys
 import time
 # pip install pypiwin32
 # ======================
@@ -96,6 +97,7 @@ class RetornasessaoSAP:
                                 resposta = int(resposta) - 1
                             else:
                                 messagebox.msgbox('Opção inválida!', messagebox.MB_OK, 'Conexão Inválida')
+                                sys.exit()
 
                         # Verifica se a opção selecionada (ou que retornou da busca da conexão padrão)
                         # é uma opção válida
@@ -177,16 +179,23 @@ class RetornasessaoSAP:
                         if self.session.info.transaction == 'S000':
                             # Pede o usuário
                             self.login = aux.criarinputbox('Usuário', 'Digite o Login:')
-                            # Pede a senha
-                            self.senha = aux.criarinputbox('Senha', 'Digite o Senha:', '*')
                             # Testa se o usuário foi digitado
                             if len(self.login) > 0:
                                 # Preenche o usuário
                                 self.session.findById("wnd[0]/usr/txtRSYST-BNAME").Text = self.login
+                            else:
+                                messagebox.msgbox('Login Inválido!', messagebox.MB_OK, 'Erro Login')
+                                sys.exit()
+
+                            # Pede a senha
+                            self.senha = aux.criarinputbox('Senha', 'Digite o Senha:', '*')
                             # Testa se a senha foi digitada
                             if len(self.senha) > 0:
                                 # Preenche a senha
                                 self.session.findById("wnd[0]/usr/pwdRSYST-BCODE").Text = self.senha
+                            else:
+                                messagebox.msgbox('Senha Inválida!', messagebox.MB_OK, 'Erro Senha')
+                                sys.exit()
                             # Apera o botão de iniciar o Login
                             self.session.findById("wnd[0]").sendVKey(0)
 
