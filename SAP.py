@@ -7,6 +7,7 @@ import datetime
 from openpyxl import Workbook, load_workbook
 import os
 import auxiliares as aux
+import pandas as pd
 
 
 # from janela import App
@@ -51,7 +52,7 @@ def programarSQVI(transacoes, se, visual):
             # Diz qual o número da transação (View) está sendo executada no momento no total de transações (Views)
             visual.mudartexto('statustrans', 'Item ' + str(index + 1) + ' de ' + str(len(transacoes)) + '...')
             # Atualiza a barra de progresso das transações (Views)
-            visual.configurarbarra('barratrans', len(transacoes), index)
+            visual.configurarbarra('barratrans', len(transacoes), index+1)
             # ==================== Parte Gráfica =======================================================
             # Seleciona a transação desejada
             se.findById("wnd[0]/tbar[0]/okcd").text = "SQVI"
@@ -79,6 +80,8 @@ def programarSQVI(transacoes, se, visual):
             if len(lista) == 0:
                 messagebox.msgbox('Sem item para analisar com o tipo informado!', messagebox.MB_OK, 'Tabela Vazia')
             else:
+                # Retorna o que está fazendo em 'background'
+                visual.mudartexto('labelpassos', 'Programando os JOBs...')
                 # Quebra a lista em lista menores para o tamanho com a quantidade de item definido na variável intervalo
                 sublistas = list(aux.chunks(lista, intervalo))
                 indice = 0
@@ -87,7 +90,7 @@ def programarSQVI(transacoes, se, visual):
 
                 # 'Looping' para quebrar o 'job' (view) em vários 'jobs'
                 for indice, item in enumerate(sublistas):
-                    visual.mudartexto('labelpassos', 'Item ' + str(indice + 1) + ' de ' + str(len(sublistas)) + '...')
+                    visual.mudartexto('statusjobs', 'Item ' + str(indice + 1) + ' de ' + str(len(sublistas)) + '...')
                     # Atualiza a barra de progresso dos 'jobs' programados
                     visual.configurarbarra('barrajob', len(sublistas), indice)
                     # Grava a data e hora que começou a rodar os 'JOBs'
@@ -124,7 +127,8 @@ def programarSQVI(transacoes, se, visual):
                             se.findById("wnd[1]/usr/btnSOFORT_PUSH").press()
                             # Salva o 'JOB'
                             se.findById("wnd[1]/tbar[0]/btn[11]").press()
-
+                # Retorna o que está fazendo em 'background'
+                visual.mudartexto('labelpassos', 'Programação dos JOBs concluída!')
                 # Sai da transação
                 se.EndTransaction()
                 # Grava a data e hora que terminou de rodar os 'JOBs'
@@ -133,8 +137,13 @@ def programarSQVI(transacoes, se, visual):
                 if not os.path.isfile('JobLog.xlsx'):
                     # Cria o arquivo em memória
                     wb = Workbook()
+                    # Pega a planilha aberta
+                    ws = wb.active
+                    # Adiciona o cabeçalho
+                    ws.append(['Data Início', 'Hora Início', 'Data Fim', 'Hora Fim', 'Usuário', 'View'])
                     # Salva o arquivo
                     wb.save('JobLog.xlsx')
+
                 # Verifica se o arquivo de LOG existe para não ter erro quando abrir o arquivo para salvar o LOG
                 if os.path.isfile('JobLog.xlsx'):
                     # Carrega o arquivo na memória
@@ -147,7 +156,7 @@ def programarSQVI(transacoes, se, visual):
                                datafim.strftime("%X"), se.info.user, transacao[list(transacao)[0]]])
                     # Salva o arquivo com as alterações
                     wb.save('JobLog.xlsx')
-
+    # Tratamento de Erros
     except Exception as e:
         messagebox.msgbox(str(e.message), messagebox.MB_OK, 'Erro')
 
@@ -155,3 +164,43 @@ def programarSQVI(transacoes, se, visual):
         # Trata a finalização do SAP
         if se is not None:
             se.finalizarsap()
+
+
+def retornarjobs(transacoes, se, visual):
+    # try:
+    # Busca o arquivo de LOG (necessário para "guiar" a busca de JOBs na SM37)
+    if os.path.isfile('JobLog.xlsx'):
+        df = pd.read_excel('JobLog.xlsx')
+    else:
+        messagebox.msgbox('Arquivo de LOG não encontrado!', messagebox.MB_OK, 'Sem Arquivo de LOG')
+        sys.exit()
+    for transacao in transacoes:
+        # Seleciona a transação desejada
+        se.findById("wnd[0]/tbar[0]/okcd").text = "SM37"
+        # Confirma a transação
+        se.findById("wnd[0]").sendVKey(0)
+        se.findById("wnd[0]/usr/txtBTCH2170-JOBNAME").Text = "*" + transacao[list(transacao)[0]] + "*" # "AQA0SYSTQV000148" + Transacao + "*"
+        se.findById("wnd[0]/usr/txtBTCH2170-USERNAME").Text = df['Usuário'].iloc[-1]
+        datainicio = df['Data Início'].iloc[-1]
+        se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_DATE").Text = datainicio.replace('/', '.')
+        datafim = df['Data Fim'].iloc[-1]
+        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_DATE").Text = datainicio.replace('/', '.')
+        horainicio = df['Hora Início'].iloc[-1]
+        se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_TIME").Text = horainicio
+        horafim = df['Hora Fim'].iloc[-1]
+        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_TIME").Text = horafim
+        se.findById("wnd[0]").sendVKey(8)
+        textomensagem = se.findById("wnd[0]/sbar").Text
+        textomensagem = str(textomensagem).strip()
+        if len(textomensagem) == 0 or textomensagem != "Nenhum job corresponde às condições de seleção":
+           telaSAP = se.findById("wnd[0]/usr")
+           print(telaSAP)
+
+    # Tratamento de Erros
+    #except Exception as e:
+    #    messagebox.msgbox(str(e.message), messagebox.MB_OK, 'Erro')
+
+    #finally:
+        # Trata a finalização do SAP
+    #    if se is not None:
+    #        se.finalizarsap()

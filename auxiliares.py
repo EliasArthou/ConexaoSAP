@@ -113,7 +113,6 @@ def caminhospadroes(caminho):
 
 def listaconexoes():
     """
-
     :return: vai ao arquivo xml padrão do SAP GUI para pegar todas as conexões instaladas no mesmo.
     """
     import xml.etree.ElementTree as ET

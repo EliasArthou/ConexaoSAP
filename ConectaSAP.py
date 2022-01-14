@@ -16,17 +16,6 @@ class RetornasessaoSAP:
     """
     Criar objeto de conexão com o SAP
     """
-    session: None
-    application: None
-    session: None
-    fecharsap: True
-    fecharconexao: True
-    fecharsessao: True
-    login: ''
-    senha: ''
-    nomeexecutavel: ''
-    conexaopadrao: ''
-
     def __init__(self, conexaopadrao, nomeexecutavel='saplogon.exe'):
         self.application = None
         self.connection = None
