@@ -4,6 +4,7 @@ Rotinas do SAP serão executadas por aqui
 import messagebox
 import sys
 import datetime
+import time
 from openpyxl import Workbook, load_workbook
 import os
 import auxiliares as aux
@@ -11,7 +12,6 @@ import pandas as pd
 
 
 # from janela import App
-
 
 def programarSQVI(transacoes, se, visual):
     """
@@ -52,7 +52,7 @@ def programarSQVI(transacoes, se, visual):
             # Diz qual o número da transação (View) está sendo executada no momento no total de transações (Views)
             visual.mudartexto('statustrans', 'Item ' + str(index + 1) + ' de ' + str(len(transacoes)) + '...')
             # Atualiza a barra de progresso das transações (Views)
-            visual.configurarbarra('barratrans', len(transacoes), index+1)
+            visual.configurarbarra('barratrans', len(transacoes), index + 1)
             # ==================== Parte Gráfica =======================================================
             # Seleciona a transação desejada
             se.findById("wnd[0]/tbar[0]/okcd").text = "SQVI"
@@ -67,8 +67,9 @@ def programarSQVI(transacoes, se, visual):
             conec = aux.Conec()
 
             if transacao[list(transacao)[1]] != tipoatual:
-                # Pega o campo tipo pelo index dele (transforma os índices do dicionário numa lista e depois pega o segundo
-                # índice da lista, ressaltando que numa lista o primeiro índice é de valor 0)
+                # Pega o campo tipo pelo index dele (transforma os índices do dicionário numa lista e
+                # depois pega o segundo índice da lista, ressaltando que numa lista o primeiro índice
+                # é de valor 0)
                 tipoatual = transacao[list(transacao)[1]]
                 # Consulta a ser realizada no banco (será usado para fazer a seleção no SAP)
                 visual.mudartexto('labelpassos', 'Executando Consulta no Banco...')
@@ -98,12 +99,14 @@ def programarSQVI(transacoes, se, visual):
                     # Carrega os n itens (definido na variável intervalo) para a memória para ser "colado" depois
                     aux.list_to_clipboard(item, indice + 1)
                     if tipoatual == 'PEDIDOS':
-                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia (problema dessa transação específica)
+                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia
+                        # (problema dessa transação específica)
                         se.findById("wnd[0]/usr/ctxtEBELN-LOW").text = "0"
                         # Abre a lista de colagem de itens da memória
                         se.findById("wnd[0]/usr/btn%_EBELN_%_APP_%-VALU_PUSH").press()
                     else:
-                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia (problema dessa transação específica)
+                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia
+                        # (problema dessa transação específica)
                         se.findById("wnd[0]/usr/ctxtBANFN-LOW").text = "0"
                         # Abre a lista de colagem de itens da memória
                         se.findById("wnd[0]/usr/btn%_BANFN_%_APP_%-VALU_PUSH").press()
@@ -167,40 +170,98 @@ def programarSQVI(transacoes, se, visual):
 
 
 def retornarjobs(transacoes, se, visual):
+    """
+
+    :param transacoes: lista de transações.
+    :param se: sessão do SAP.
+    :param visual: tela de “app” para ser atualizado.
+    """
     # try:
     # Busca o arquivo de LOG (necessário para "guiar" a busca de JOBs na SM37)
+
+    listacabecalho = []
+    listavalor = []
+    listachecks = []
+    indicecabecalho = -1
+    limitecharleft = 0
+    indicecharleft = []
+    achoucabecalho = False
+
     if os.path.isfile('JobLog.xlsx'):
         df = pd.read_excel('JobLog.xlsx')
     else:
         messagebox.msgbox('Arquivo de LOG não encontrado!', messagebox.MB_OK, 'Sem Arquivo de LOG')
         sys.exit()
-    for transacao in transacoes:
+    for indice, transacao in enumerate(transacoes):
+        linha = len(transacoes) - indice
         # Seleciona a transação desejada
         se.findById("wnd[0]/tbar[0]/okcd").text = "SM37"
         # Confirma a transação
         se.findById("wnd[0]").sendVKey(0)
-        se.findById("wnd[0]/usr/txtBTCH2170-JOBNAME").Text = "*" + transacao[list(transacao)[0]] + "*" # "AQA0SYSTQV000148" + Transacao + "*"
-        se.findById("wnd[0]/usr/txtBTCH2170-USERNAME").Text = df['Usuário'].iloc[-1]
-        datainicio = df['Data Início'].iloc[-1]
+        se.findById("wnd[0]/usr/txtBTCH2170-JOBNAME").Text = "*" + transacao[list(transacao)[0]] + "*"
+        se.findById("wnd[0]/usr/txtBTCH2170-USERNAME").Text = df['Usuário'].iloc[linha * -1]
+        datainicio = df['Data Início'].iloc[linha * -1]
         se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_DATE").Text = datainicio.replace('/', '.')
-        datafim = df['Data Fim'].iloc[-1]
+        # datafim = df['Data Fim'].iloc[-1]
         se.findById("wnd[0]/usr/ctxtBTCH2170-TO_DATE").Text = datainicio.replace('/', '.')
-        horainicio = df['Hora Início'].iloc[-1]
+        horainicio = df['Hora Início'].iloc[linha * -1]
         se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_TIME").Text = horainicio
-        horafim = df['Hora Fim'].iloc[-1]
-        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_TIME").Text = horafim
+        horafim = datetime.datetime(*time.strptime(horainicio, '%H:%M:%S')[:6]) + datetime.timedelta(minutes=5)
+        horafim = horafim.time()
+        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_TIME").Text = str(horafim)
         se.findById("wnd[0]").sendVKey(8)
         textomensagem = se.findById("wnd[0]/sbar").Text
         textomensagem = str(textomensagem).strip()
         if len(textomensagem) == 0 or textomensagem != "Nenhum job corresponde às condições de seleção":
-           telaSAP = se.findById("wnd[0]/usr")
-           print(telaSAP)
+            telaSAP = se.findById("wnd[0]/usr")
+            # Guarda a barra de rolagem
+            rolagem = se.findById("wnd[0]/usr").verticalScrollbar
+            print(rolagem.position, rolagem.maximum, rolagem.pagesize)
+            while rolagem.position <= rolagem.maximum:
+                for item in telaSAP.children:
+                    if hasattr(item, 'tooltip'):
+                        # Guarda o valor do popup que aparece quando se passa o mouse no item,
+                        # está sendo usado porque os únicos que tem essa opção são os itens de
+                        # cabeçalho
+                        valor = item.tooltip
+                        # Verifica se a informação está preenchida
+                        if len(valor.strip()) > 0:
+                            achoucabecalho = True
+                            # Guarda o cabeçalho numa lista de cabeçalhos
+                            listacabecalho.append(valor)
+                            # Verifica se já achou a linha do cabeçalho
+                            if indicecabecalho == -1:
+                                # Armazena a linha do cabeçalho
+                                indicecabecalho = item.chartop
+
+                            # Verifica a posição do último item da linha possível
+                            if limitecharleft < item.charleft:
+                                # Armazena o maior índice de coluna da linha pra saber o limite da mesma
+                                limitecharleft = item.charleft
+
+                            # Guarda a posição de todas as colunas de informações
+                            indicecharleft.append(item.charleft)
+
+                        else:
+                            if achoucabecalho:
+                                if str(item.type).upper() == "GUICHECKBOX":
+                                    # Guarda os checkboxes
+                                    listachecks.append((item.id, rolagem.position))
+                                    print(item.charleft, item.chartop, item.id, item.text, item.tooltip, item.id)
+                                else:
+                                    # Armazena a informação
+                                    print(item.text)
+                                    listavalor.append(item.text)
+
+                    # Armazena a informação
+                    # if item.charleft in indicecharleft:
+                    #    print(item.charleft, item.chartop, item.id, item.text, item.tooltip, item.id)
 
     # Tratamento de Erros
-    #except Exception as e:
+    # except Exception as e:
     #    messagebox.msgbox(str(e.message), messagebox.MB_OK, 'Erro')
 
-    #finally:
-        # Trata a finalização do SAP
+    # finally:
+    # Trata a finalização do SAP
     #    if se is not None:
     #        se.finalizarsap()
