@@ -3,7 +3,6 @@ Organizar o objeto de conexão com o SAP e tudo que ele precisa para funcionar c
 """
 import sys
 import time
-# pip install pypiwin32
 # ======================
 import win32api
 import win32com.client
@@ -197,13 +196,21 @@ class RetornasessaoSAP:
             aux.fecharprograma('saplogon.exe')
 
         elif self.fechaconexao:
-            while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
-                self.session.findById(self.session.ActiveWindow.name).close()
-                if self.session.ActiveWindow.name == 'wnd[1]':
-                    self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
+            if self.session is not None:
+                while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
+                    self.session.findById(self.session.ActiveWindow.name).close()
+                    if self is not None:
+                        if self.session.ActiveWindow.name == 'wnd[1]':
+                            self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
+                    else:
+                        break
 
         elif self.session:
-            while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
-                self.session.findById(self.session.ActiveWindow.name).close()
-                if self.session.ActiveWindow.name == 'wnd[1]':
-                    self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
+            if self.session is not None:
+                while self.session.ActiveWindow.name != 'wnd[0]' or self.session is not None:
+                    self.session.findById(self.session.ActiveWindow.name).close()
+                    if self is not None:
+                        if self.session.ActiveWindow.name == 'wnd[1]':
+                            self.session.findById("wnd[1]/usr/btnSPOP-OPTION1").press()
+                    else:
+                        break

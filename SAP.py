@@ -1,267 +1,253 @@
 """
 Rotinas do SAP serão executadas por aqui
 """
-import messagebox
-import sys
+
 import datetime
-import time
-from openpyxl import Workbook, load_workbook
-import os
+import os.path
+import numpy as np
 import auxiliares as aux
 import pandas as pd
+import banco as bd
+import getpass
+from datetime import datetime, timedelta
+import setupextrator as variaveis
 
 
 # from janela import App
 
-def programarSQVI(transacoes, se, visual):
+def processosap(se, visual, lista, listaorcamento=None):
     """
     :param visual: tela de retorno do usuário.
-    :param transacoes: lista contendo o dicionário com a transação e a classificação dos itens pesquisados.
     :param se: sessão do SAP que as ações do SAP será executado
+    :param lista: lista de e-mails
+    :param listaorcamento: lista dos PRJs
     """
+    sessao = None
+    item = None
 
-    try:
-        # Variável para controlar se o Tipo mudou em relação à transação anterior para saber se será necessário um novo SELECT
-        tipoatual = ''
-        # Lista que receberá o resultado do SELECT
-        lista = []
-        # Inicia a variável
-        datainicio = ''
-
-        # Variável que receberá o intervalo de itens para a execução de cada JOB
-        intervalo = aux.criarinputbox('Quantidade de Itens', 'Insira a quantidade de itens por job a ser extraído:',
-                                      valorinicial='10000')
-        # Verifica se foi digitado corretamente
-        if len(intervalo) > 0:
-            if intervalo.isnumeric():
-                # Formata a entrada para número
-                intervalo = int(intervalo)
-        else:
-            # Mensagem de erro e finalização do processo se o intervalo foi digitado errado
-            messagebox.msgbox('Valor inválido para a quantidade de itens!', messagebox.MB_OK,
-                              'Erro quantidade de itens')
-            sys.exit()
-
-        visual.acertaconfjanela(True)
-
-        # ‘Looping’ para executar todas as visões solicitadas pelo usuário
-        for index, transacao in enumerate(transacoes):
-            # ==================== Parte Gráfica =======================================================
-            # Coloca o nome do JOB na tela (da View do JOB, na verdade, visto que a transação é a SQVI)
-            visual.mudartexto('labeljob', transacao[list(transacao)[0]])
-            # Diz qual o número da transação (View) está sendo executada no momento no total de transações (Views)
-            visual.mudartexto('statustrans', 'Item ' + str(index + 1) + ' de ' + str(len(transacoes)) + '...')
-            # Atualiza a barra de progresso das transações (Views)
-            visual.configurarbarra('barratrans', len(transacoes), index + 1)
-            # ==================== Parte Gráfica =======================================================
-            # Seleciona a transação desejada
-            se.findById("wnd[0]/tbar[0]/okcd").text = "SQVI"
-            # Confirma a transação
-            se.findById("wnd[0]").sendVKey(0)
-            # Seleciona a View
-            se.findById("wnd[0]/usr/ctxtRS38R-QNUM").text = transacao[list(transacao)[0]]
-            # Confirma a seleção
-            se.findById("wnd[0]/usr/btnP1").press()
-
-            # Conexão com o Banco de Dados
-            conec = aux.Conec()
-
-            if transacao[list(transacao)[1]] != tipoatual:
-                # Pega o campo tipo pelo index dele (transforma os índices do dicionário numa lista e
-                # depois pega o segundo índice da lista, ressaltando que numa lista o primeiro índice
-                # é de valor 0)
-                tipoatual = transacao[list(transacao)[1]]
-                # Consulta a ser realizada no banco (será usado para fazer a seleção no SAP)
-                visual.mudartexto('labelpassos', 'Executando Consulta no Banco...')
-                lista = conec.consulta(
-                    "SELECT DISTINCT [Nº doc.ref] FROM [BDSIRI].[UsrBDSIRI].[GIG Analise Compromisso]"
-                    " WHERE UPPER ([Ctg.val])='" + tipoatual + "' ORDER BY [Nº doc.ref]")
-
-            # Verifica se a lista veio com itens
-            if len(lista) == 0:
-                messagebox.msgbox('Sem item para analisar com o tipo informado!', messagebox.MB_OK, 'Tabela Vazia')
-            else:
-                # Retorna o que está fazendo em 'background'
-                visual.mudartexto('labelpassos', 'Programando os JOBs...')
-                # Quebra a lista em lista menores para o tamanho com a quantidade de item definido na variável intervalo
-                sublistas = list(aux.chunks(lista, intervalo))
-                indice = 0
-                visual.mudartexto('labeljob', transacao[list(transacao)[0]])
-                visual.configurarbarra('barrajob', len(sublistas), indice)
-
-                # 'Looping' para quebrar o 'job' (view) em vários 'jobs'
-                for indice, item in enumerate(sublistas):
-                    visual.mudartexto('statusjobs', 'Item ' + str(indice + 1) + ' de ' + str(len(sublistas)) + '...')
-                    # Atualiza a barra de progresso dos 'jobs' programados
-                    visual.configurarbarra('barrajob', len(sublistas), indice)
-                    # Grava a data e hora que começou a rodar os 'JOBs'
-                    datainicio = datetime.datetime.now()
-                    # Carrega os n itens (definido na variável intervalo) para a memória para ser "colado" depois
-                    aux.list_to_clipboard(item, indice + 1)
-                    if tipoatual == 'PEDIDOS':
-                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia
-                        # (problema dessa transação específica)
-                        se.findById("wnd[0]/usr/ctxtEBELN-LOW").text = "0"
-                        # Abre a lista de colagem de itens da memória
-                        se.findById("wnd[0]/usr/btn%_EBELN_%_APP_%-VALU_PUSH").press()
-                    else:
-                        # Para abrir a lista de colagem a caixa de texto não pode estar vazia
-                        # (problema dessa transação específica)
-                        se.findById("wnd[0]/usr/ctxtBANFN-LOW").text = "0"
-                        # Abre a lista de colagem de itens da memória
-                        se.findById("wnd[0]/usr/btn%_BANFN_%_APP_%-VALU_PUSH").press()
-
-                    # Abre a janela para colar as informações da memória
-                    if se.ActiveWindow.name == "wnd[1]":
-                        # Limpa a lista
-                        se.findById("wnd[1]/tbar[0]/btn[16]").press()
-                        # Carrega a lista com os itens da memória
-                        se.findById("wnd[1]/tbar[0]/btn[24]").press()
-                        # "Confirma" a lista
-                        se.findById("wnd[1]/tbar[0]/btn[8]").press()
-                    # Selecionar o executar em 'background'
-                    if se.ActiveWindow.name == "wnd[0]":
-                        # Aperta o botão de programar 'JOBs'
-                        se.findById("wnd[0]/mbar/menu[0]/menu[2]").select()
-                        if se.ActiveWindow.name == "wnd[1]":
-                            # Confirma a "inpressora" utilizada (normalmente só virtual)
-                            se.findById("wnd[1]/tbar[0]/btn[13]").press()
-                            # Seleciona que é imediata
-                            se.findById("wnd[1]/usr/btnSOFORT_PUSH").press()
-                            # Salva o 'JOB'
-                            se.findById("wnd[1]/tbar[0]/btn[11]").press()
-                # Retorna o que está fazendo em 'background'
-                visual.mudartexto('labelpassos', 'Programação dos JOBs concluída!')
-                # Sai da transação
-                se.EndTransaction()
-                # Grava a data e hora que terminou de rodar os 'JOBs'
-                datafim = datetime.datetime.now()
-                # Verifica se o arquivo de LOG existe
-                if not os.path.isfile('JobLog.xlsx'):
-                    # Cria o arquivo em memória
-                    wb = Workbook()
-                    # Pega a planilha aberta
-                    ws = wb.active
-                    # Adiciona o cabeçalho
-                    ws.append(['Data Início', 'Hora Início', 'Data Fim', 'Hora Fim', 'Usuário', 'View'])
-                    # Salva o arquivo
-                    wb.save('JobLog.xlsx')
-
-                # Verifica se o arquivo de LOG existe para não ter erro quando abrir o arquivo para salvar o LOG
-                if os.path.isfile('JobLog.xlsx'):
-                    # Carrega o arquivo na memória
-                    wb = load_workbook('JobLog.xlsx')
-                    # Pega a planilha aberta
-                    ws = wb.active
-
-                    # Salva as informações relevantes para resgastar os jobs no próximo passo
-                    ws.append([datainicio.strftime("%d/%m/%Y"), datainicio.strftime("%X"), datafim.strftime("%d/%m/%Y"),
-                               datafim.strftime("%X"), se.info.user, transacao[list(transacao)[0]]])
-                    # Salva o arquivo com as alterações
-                    wb.save('JobLog.xlsx')
-    # Tratamento de Erros
-    except Exception as e:
-        messagebox.msgbox(str(e.message), messagebox.MB_OK, 'Erro')
-
-    finally:
-        # Trata a finalização do SAP
-        if se is not None:
-            se.finalizarsap()
-
-
-def retornarjobs(transacoes, se, visual):
-    """
-
-    :param transacoes: lista de transações.
-    :param se: sessão do SAP.
-    :param visual: tela de “app” para ser atualizado.
-    """
     # try:
-    # Busca o arquivo de LOG (necessário para "guiar" a busca de JOBs na SM37)
+    problemasap = False
+    sessao = se.session
+    banco = bd.Banco()
+    visual.mudartexto('labeljob', 'Consultando Atualização', 'Arial 15 bold')
+    df = banco.consultar(f"SELECT * FROM TblAtualizacaoes WHERE Relatorio = 'Ordem Interna'")
 
-    listacabecalho = []
-    listavalor = []
-    listachecks = []
-    indicecabecalho = -1
-    limitecharleft = 0
-    indicecharleft = []
-    achoucabecalho = False
+    # Verifique se o DataFrame está vazio
+    if len(df) == 0:
+        # Obtenha a data e hora atuais
+        data_atual = datetime.now()
 
-    if os.path.isfile('JobLog.xlsx'):
-        df = pd.read_excel('JobLog.xlsx')
+        # Subtrair um dia
+        um_dia = timedelta(days=1)
+        data_anterior = data_atual - um_dia
+
+        # Calcule a diferença entre as datas
+        diferenca = data_anterior - data_atual
+
     else:
-        messagebox.msgbox('Arquivo de LOG não encontrado!', messagebox.MB_OK, 'Sem Arquivo de LOG')
-        sys.exit()
-    for indice, transacao in enumerate(transacoes):
-        linha = len(transacoes) - indice
-        # Seleciona a transação desejada
-        se.findById("wnd[0]/tbar[0]/okcd").text = "SM37"
-        # Confirma a transação
-        se.findById("wnd[0]").sendVKey(0)
-        se.findById("wnd[0]/usr/txtBTCH2170-JOBNAME").Text = "*" + transacao[list(transacao)[0]] + "*"
-        se.findById("wnd[0]/usr/txtBTCH2170-USERNAME").Text = df['Usuário'].iloc[linha * -1]
-        datainicio = df['Data Início'].iloc[linha * -1]
-        se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_DATE").Text = datainicio.replace('/', '.')
-        # datafim = df['Data Fim'].iloc[-1]
-        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_DATE").Text = datainicio.replace('/', '.')
-        horainicio = df['Hora Início'].iloc[linha * -1]
-        se.findById("wnd[0]/usr/ctxtBTCH2170-FROM_TIME").Text = horainicio
-        horafim = datetime.datetime(*time.strptime(horainicio, '%H:%M:%S')[:6]) + datetime.timedelta(minutes=5)
-        horafim = horafim.time()
-        se.findById("wnd[0]/usr/ctxtBTCH2170-TO_TIME").Text = str(horafim)
-        se.findById("wnd[0]").sendVKey(8)
-        textomensagem = se.findById("wnd[0]/sbar").Text
-        textomensagem = str(textomensagem).strip()
-        if len(textomensagem) == 0 or textomensagem != "Nenhum job corresponde às condições de seleção":
-            telaSAP = se.findById("wnd[0]/usr")
-            # Guarda a barra de rolagem
-            rolagem = se.findById("wnd[0]/usr").verticalScrollbar
-            print(rolagem.position, rolagem.maximum, rolagem.pagesize)
-            while rolagem.position <= rolagem.maximum:
-                for item in telaSAP.children:
-                    if hasattr(item, 'tooltip'):
-                        # Guarda o valor do popup que aparece quando se passa o mouse no item,
-                        # está sendo usado porque os únicos que tem essa opção são os itens de
-                        # cabeçalho
-                        valor = item.tooltip
-                        # Verifica se a informação está preenchida
-                        if len(valor.strip()) > 0:
-                            achoucabecalho = True
-                            # Guarda o cabeçalho numa lista de cabeçalhos
-                            listacabecalho.append(valor)
-                            # Verifica se já achou a linha do cabeçalho
-                            if indicecabecalho == -1:
-                                # Armazena a linha do cabeçalho
-                                indicecabecalho = item.chartop
+        # Converta a série 'Atualizacao' para datetime, se necessário
+        if not pd.api.types.is_datetime64_any_dtype(df['Atualizacao']):
+            df['Atualizacao'] = pd.to_datetime(df['Atualizacao'])
 
-                            # Verifica a posição do último item da linha possível
-                            if limitecharleft < item.charleft:
-                                # Armazena o maior índice de coluna da linha pra saber o limite da mesma
-                                limitecharleft = item.charleft
+        # Calcule a diferença entre a data da atualização e a data atual
+        diferenca = datetime.now() - df['Atualizacao']
 
-                            # Guarda a posição de todas as colunas de informações
-                            indicecharleft.append(item.charleft)
+    # Extraia apenas o número de dias da diferença
+    diferenca_em_dias = diferenca.dt.days
 
-                        else:
-                            if achoucabecalho:
-                                if str(item.type).upper() == "GUICHECKBOX":
-                                    # Guarda os checkboxes
-                                    listachecks.append((item.id, rolagem.position))
-                                    print(item.charleft, item.chartop, item.id, item.text, item.tooltip, item.id)
-                                else:
-                                    # Armazena a informação
-                                    print(item.text)
-                                    listavalor.append(item.text)
+    # Extraia apenas o número de dias da diferença
+    diferenca_em_dias = diferenca_em_dias[0]
 
-                    # Armazena a informação
-                    # if item.charleft in indicecharleft:
-                    #    print(item.charleft, item.chartop, item.id, item.text, item.tooltip, item.id)
+    sessao.FindById("wnd[0]").maximize()
+    # ================================= Extração de Ordens Internas =======================================
+    if diferenca_em_dias >= 1:
+        # Preenche a transação a KOK5
+        sessao.FindById("wnd[0]/tbar[0]/okcd").Text = "kok5"
+        # Inicia a transação
+        sessao.FindById("wnd[0]").sendVKey(0)
+        # Verifica se abriu a lista com variantes e fecha
+        if sessao.Children.count > 1:
+            sessao.findById("wnd[1]").sendVKey(12)
+        # Define a variant que será utilizada
+        sessao.findById("wnd[0]/usr/subSELEKTION:SAPLKOSM:0510/ctxtCODIA-VARIANT").text = "listaordens"
+        # Executa a extração
+        sessao.findById("wnd[0]").sendVKey(8)
+        # Chama a variante
+        sessao.findById("wnd[0]").sendVKey(33)
+        # Pega a tela da lista de variante e armazena em uma variável
+        tabela = sessao.findById(
+            "wnd[1]/usr/ssubD0500_SUBSCREEN:SAPLSLVC_DIALOG:0501/cntlG51_CONTAINER/shellcont/shell")
+        # Inicia a lista do início
+        tabela.firstVisibleRow = 0
+        # Número total de linhas na tabela
+        total_rows = tabela.RowCount
+        # Nome da variante que você está procurando
+        texto_procurado = "/FLA"
 
-    # Tratamento de Erros
+        # Loop pelas linhas da tabela
+        for row_index in range(total_rows):
+            # Obtém o texto da primeira coluna da linha atual
+            texto_coluna1 = tabela.GetCellValue(row_index, "VARIANT")  # Supondo que a primeira coluna tenha o índice 1
+
+            # Verifica se o texto da primeira coluna é o texto que você está procurando
+            if texto_procurado in texto_coluna1:
+                # Se encontrado, coloca no início da lista pela barra de rolagem
+                tabela.firstVisibleRow = row_index
+                # Seleciona a linha da variante encontrada
+                tabela.currentCellRow = row_index
+                # Clica no item para a seleção e execução
+                tabela.clickCurrentCell()
+                # Chama a exportação do arquivo
+                sessao.findById("wnd[0]").sendVKey(9)
+                # Seleciona como tipo "TXT"
+                sessao.findById("wnd[1]").sendVKey(0)
+                # Define o nome do arquivo
+                sessao.findById("wnd[1]/usr/ctxtDY_FILENAME").text = "listaordens.txt"
+                # Confirma
+                sessao.findById("wnd[1]").sendVKey(11)
+                # Sai da transação
+                sessao.EndTransaction()
+                if os.path.isfile(os.path.join(aux.caminhospadroes(5), 'SAP/SAP GUI/', 'listaordens.txt')):
+                    usuario = getpass.getuser()
+                    banco.executarSQL('TRUNCATE TABLE [Lista Ordem Internas]')
+                    retorno = aux.tratararquivo(os.path.join(aux.caminhospadroes(5), 'SAP/SAP GUI/', 'listaordens.txt'),
+                                                retornadf=True)
+                    # Removendo a coluna de tipo (ZD12)
+                    retorno = retorno.drop(columns=['Tp.'])
+                    # Define os nomes das colunas
+                    novos_nomes = ['Ordem', 'Descrição da atividade', 'Centro de Lucro', 'Centro de Custo Responsável',
+                                   'Centro de Custo Solicitante', 'Área de Aplicação', 'Objetivo Setorial',
+                                   'Grupo de Ordem', 'Código do Cliente', 'Data Entrada', 'Status']
+
+                    # Renomeia as colunas
+                    retorno.columns = novos_nomes
+
+                    # Adiciona o dataframe
+                    banco.adicionardf('Lista Ordem Internas', retorno)
+                    if len(df) == 0:
+                        banco.executarSQL(
+                            f"INSERT INTO TblAtualizacaoes VALUES ('Ordem Interna', '{datetime.now().strftime("%m/%d/%Y %H:%M:%S")}','{usuario}')")
+                    else:
+                        banco.executarSQL(
+                            f"UPDATE TblAtualizacaoes SET Atualizacao = '{datetime.now().strftime("%m/%d/%Y %H:%M:%S")}', Usuario = '{usuario}' WHERE Relatorio = 'Ordem Interna'")
+
+                break
+
+            # Se o loop terminar sem encontrar o texto, imprima uma mensagem
+            print("Texto não encontrado na tabela.")
+
+    visual.acertaconfjanela(True)
+
+    # ==================== Parte Gráfica =======================================================
+    # Coloca o passo que se encontra
+    visual.mudartexto('labeljob', 'Criando Ordem')
+    # ==================== Parte Gráfica =======================================================
+    for indice, item in enumerate(lista):
+        problemasap = False
+        retornoitem, respostaitem = aux.validadados(item)
+        if not retornoitem:
+            visual.mudartexto('labelpassos', f'Criando OI {indice + 1} de {len(lista)}...')
+            visual.configurarbarra('barrajob', len(lista), indice + 1)
+            if listaorcamento is not None:
+                valororcamento = listaorcamento.loc[listaorcamento['Projeto'].str.strip() == item['Objetivo Setorial'].strip(), 'Valor'].iloc[0]
+                if valororcamento.empty:
+                   valororcamento = 0
+            else:
+                valororcamento = 1
+
+            if valororcamento > 0:
+                sessao.FindById("wnd[0]").maximize()
+                sessao.FindById("wnd[0]/tbar[0]/okcd").Text = "ko01"
+                sessao.FindById("wnd[0]").sendVKey(0)
+                sessao.FindById("wnd[0]").restore()
+                sessao.FindById("wnd[0]/usr/ctxtCOAS-AUART").Text = "zd12"
+                sessao.FindById("wnd[0]").sendVKey(0)
+                sessao.FindById("wnd[0]/usr/txtCOAS-KTEXT").Text = item["Descrição da atividade"].strip()[:40]
+                sessao.FindById(
+                    "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT1/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA1:SAPMKAUF:0315/ctxtCOAS-PRCTR").Text = \
+                    item["Centro de Lucro"]
+                print(len(sessao.FindById("wnd[0]/sbar").Text))
+                sessao.FindById(
+                    "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT1/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA1:SAPMKAUF:0315/ctxtCOAS-KOSTV").Text = \
+                    item["Centro de Custos Responsável"]
+                sessao.FindById(
+                    "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT1/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA1:SAPMKAUF:0315/ctxtCOAS-AKSTL").Text = \
+                    item["Centro de Custos Solicitante"]
+                sessao.FindById("wnd[0]").maximize()
+                sessao.FindById("wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5").Select()
+                item["Resposta"] = sessao.FindById("wnd[0]/sbar").Text
+                if len(item['Resposta'].strip()) > 0:
+                    visual.mudartexto('labelpassos', 'Enviando E-mail')
+                    aux.reply_or_forward_email(item['Email'], item['Resposta'], variaveis.emails)
+                    sessao.EndTransaction()
+                else:
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYAREA_AP").Text = \
+                        item["Área de Aplicação"]
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYGRP_ORD").Text = \
+                        item["Grupo de Ordem"]
+                    sessao.FindById("wnd[0]").maximize()
+                    sessao.FindById("wnd[0]").restore()
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYAREA_AP").SetFocus()
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYAREA_AP").caretPosition = 4
+                    sessao.FindById("wnd[0]").sendVKey(0)
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYOBJ_SET").Text = \
+                        item["Objetivo Setorial"]
+                    sessao.FindById(
+                        "wnd[0]/usr/tabsTABSTRIP_600/tabpBUT5/ssubAREA_FOR_601:SAPMKAUF:0601/subAREA2:SAPLXAUF:0100/ctxtGLOBAL_AUFK-YYKUNNR").Text = \
+                        item["Código do Cliente"]
+                    sessao.FindById("wnd[0]/tbar[0]/btn[11]").press()
+                    sessao.FindById("wnd[0]").maximize()
+                    item["Resposta"] = sessao.FindById("wnd[0]/sbar").Text
+                    if len(item['Resposta'].strip()) > 0:
+                        visual.mudartexto('labelpassos', 'Enviando E-mail')
+                        aux.reply_or_forward_email(item['Email'], item['Resposta'], variaveis.emails)
+        else:
+            visual.mudartexto('labelpassos', 'Enviando E-mail')
+            aux.reply_or_forward_email(item['Email'], respostaitem, variaveis.emails, respostaitem)
+        if sessao.info.transaction != "SESSION_MANAGER":
+            sessao.EndTransaction()
+
+    lista = pd.DataFrame(lista)
+    lista['Ordem'] = lista['Resposta'].str.extract(r'(\d{10})')
+    lista['Data Entrada'] = datetime.datetime.now().strftime('%d/%m/%Y')
+    lista = lista.loc[lista['Resposta'].str.len() > 0]
+    visual.mudartexto('labelpassos', 'Criação OIs Concluídas')
+    # Retorna o que está fazendo em 'background'
+    if sessao.info.transaction != "SESSION_MANAGER":
+        # Sai da transação
+        sessao.EndTransaction()
+    # Grava a data e hora que terminou de rodar os 'JOBs'
+    datafim = datetime.datetime.now()
+
+    # Verifica se o arquivo de LOG existe para não ter erro quando abrir o arquivo para salvar o LOG
+    # if os.path.isfile(pwd.arquivoOIs):
+
+    colunaapagar = ['Resposta']
+    listacampos = variaveis.camposdados
+    listacampos.append(colunaapagar)
+    # listacampos = ['Ordem',
+    #                'Descrição da atividade',
+    #                'Centro de Lucro',
+    #                'Centro de Custo Responsável',
+    #                'Centro de Custo Solicitante',
+    #                'Área de Aplicação',
+    #                'Objetivo Setorial',
+    #                'Grupo de Ordem',
+    #                'Código do Cliente',
+    #                'Data Entrada',
+    #                'Resposta']
+    lista = lista[variaveis.camposdados]
+    lista = lista.dropna(subset=['Ordem'])
+    lista.replace('', np.nan, inplace=True)
+    banco.adicionardf('Lista Ordem Internas', lista, colunaapagar)
     # except Exception as e:
-    #    messagebox.msgbox(str(e.message), messagebox.MB_OK, 'Erro')
-
-    # finally:
-    # Trata a finalização do SAP
-    #    if se is not None:
-    #        se.finalizarsap()
+    #     df = pd.DataFrame(lista)
+    #     arquivodeerro = 'Criados.xlsx'
+    #     if os.path.isfile(arquivodeerro):
+    #         os.remove(arquivodeerro)
+    #     df.to_excel(arquivodeerro, index=False)

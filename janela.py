@@ -40,11 +40,6 @@ class App(tk.Tk):
         self.statustrans = ttk.Label(self, text='', font="Arial 10")
         self.statustrans.pack()
 
-        # ProgressBar de Quantidade de Transações (Views)
-        self.barratrans = Progressbar(self, orient=tk.HORIZONTAL, length=200, mode='determinate')
-        # self.barratrans.place(x=300, y=10)
-        self.barratrans.pack()
-
         # Label de status do JOB
         self.statusjobs = ttk.Label(self, text='', font="Arial 10")
         self.statusjobs.pack()
@@ -70,12 +65,12 @@ class App(tk.Tk):
         self.destroy()
         sys.exit()
 
-    def mudartexto(self, nomelabel, texto):
+    def mudartexto(self, nomelabel, texto, fonte='Arial 25 bold'):
         """
         :param nomelabel: nome do label a ter o texto alterado
         :param texto: texto a ser inserido
         """
-        self.__getattribute__(nomelabel).config(text=texto)
+        self.__getattribute__(nomelabel).config(text=texto, font=fonte)
         self.atualizatela()
 
     def configurarbarra(self, nomebarra, maximo, indicador):
